@@ -39,14 +39,28 @@ fn App() -> Html{
         }
     );
     html!{
-        <div id="chat-container">
-            <ul>
+        <div id="chat-container" class="bg-gray-900 text-gray-200 min-h-screen flex flex-col items-center p-6 space-y-4">
+            <h1 class="text-3xl font-bold text-white mb-6">{"Broadcast Chat"}</h1>
+            <ul class="bg-gray-800 w-full max-w-lg rounded-lg shadow-lg mb-4 p-4 flex-grow overflow-auto space-y-2">
                 {
-                    messages.iter().map(|m| html!{<li>{m}</li>}).collect::<Html>()
+                    messages.iter().map(|m| html! {
+                        <li class="bg-gray-700 p-3 rounded-lg border border-gray-600">{m}</li>
+                    }).collect::<Html>()
                 }
             </ul>
-            <textarea onchange={on_text_change} value={text_input}></textarea>
-            <button type="submit" onclick={on_send}>{"Send"}</button>
+            <textarea
+                onchange={on_text_change}
+                value={text_input}
+                class="w-full max-w-lg mb-2 p-3 rounded-lg border border-gray-600 bg-gray-800 text-gray-200 placeholder-gray-400"
+                placeholder="Type your message here..."
+            ></textarea>
+            <button
+                type="submit"
+                onclick={on_send}
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-400"
+            >
+                {"Send"}
+            </button>
         </div>
     }
 }
