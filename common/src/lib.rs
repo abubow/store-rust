@@ -1,14 +1,23 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+use chrono::NaiveDateTime;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum WSMessageType{
+    NewMessage,
+    UserList,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Message {
+    pub msg: String,
+    pub user: String,
+    pub created_at: NaiveDateTime,
+    // pub id: usize
+}
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+#[derive(Serialize, Deserialize, Clone)]
+pub struct WSMessage{
+    pub message_type:WSMessageType,
+    pub message:Option<Message>,
+    pub users:Option<Vec<String>>
 }

@@ -1,3 +1,4 @@
+use common::WSMessageType;
 use web_sys::HtmlTextAreaElement;
 use yew::prelude::*;
 use yew_hooks::use_websocket;
@@ -14,8 +15,17 @@ fn App() -> Html{
     let mut copy_messages = messages.clone();
     use_effect_with(ws.message.clone(), move |ws_message| {
         if let Some(ws_msg) = &**ws_message {
-            copy_messages.push(ws_msg.clone());
-            message_handler.set(copy_messages.clone());
+            let ws_msg: common::WSMessage = serde_json::from_str::<common::WSMessage>(&ws_msg).unwrap();
+            match ws_msg.message_type {
+                WSMessageType::NewMessage => {
+                    let msg = ws_msg.message.expect("Error: Message missing payload");
+                    copy_messages.push(msg);
+                    message_handler.set(copy_messages.clone());
+                }
+                WSMessageType::UserList => {
+
+                }
+            }
         }
     });
 
@@ -38,13 +48,23 @@ fn App() -> Html{
             input_handler_clone.set(String::from(""));
         }
     );
-    html!{
+    html! {
         <div id="chat-container" class="bg-gray-900 text-gray-200 min-h-screen flex flex-col items-center p-6 space-y-4">
             <h1 class="text-3xl font-bold text-white mb-6">{"Broadcast Chat"}</h1>
             <ul class="bg-gray-800 w-full max-w-lg rounded-lg shadow-lg mb-4 p-4 flex-grow overflow-auto space-y-2">
                 {
-                    messages.iter().map(|m| html! {
-                        <li class="bg-gray-700 p-3 rounded-lg border border-gray-600">{m}</li>
+                    messages.iter().map(|m| {
+                        let profile_picture_url = format!("https://api.dicebear.com/8.x/pixel-art/svg?seed={}", m.user);
+                        html! {
+                            <li class="bg-gray-700 p-3 rounded-lg border border-gray-600 flex items-center space-x-3">
+                                <img src={profile_picture_url} class="w-8 h-8 rounded-full" alt="Profile picture" />
+                                <div>
+                                    <p class="font-bold">{m.user.clone()}</p>
+                                    <p>{m.msg.clone()}</p>
+                                    <p class="text-xs text-gray-400">{m.created_at.format("%Y-%m-%d %H:%M:%S").to_string()}</p>
+                                </div>
+                            </li>
+                        }
                     }).collect::<Html>()
                 }
             </ul>
@@ -62,7 +82,7 @@ fn App() -> Html{
                 {"Send"}
             </button>
         </div>
-    }
+    }    
 }
 fn main() {
     yew::Renderer::<App>::new().render();

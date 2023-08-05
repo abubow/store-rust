@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::atomic::AtomicUsize;
 
+use common::WSMessage;
 use rocket::tokio::sync::Mutex;
 use rocket::State;
 use rocket::futures::{stream::SplitSink, SinkExt, StreamExt};
@@ -20,10 +21,20 @@ impl Room {
     pub async fn disconnect(&self, id:usize) {
         let _ = self.connections.lock().await.remove(&id);
     }
-    pub async fn broadcast(&self, msg:Message) {
+    pub async fn broadcast(&self, msg:Message, author:usize) {
+        let chat_msg = common::Message{
+            msg: msg.to_string(),
+            user: format!("user{}", author),
+            created_at: chrono::Local::now().naive_local(),
+        };
+        let ws_message = WSMessage{
+            message_type:common::WSMessageType::NewMessage,
+            message:Some(chat_msg),
+            users:None
+        };
         let mut connections = self.connections.lock().await;
         for (_, tx) in connections.iter_mut() {
-            let _ = tx.send(msg.clone()).await;
+            let _ = tx.send(Message::Text(serde_json::to_string(&ws_message).unwrap())).await;
         }
     }
 }
@@ -37,7 +48,7 @@ fn chat<'r>(ws:WebSocket, room:&'r State<Room>) ->Channel<'r> {
         let _ = room.connect(id, ws_tx).await;
         
         while let Some(msg) = ws_rx.next().await {
-            room.broadcast(msg?).await;
+            room.broadcast(msg?, id).await;
         }
 
         let _ = room.disconnect(id).await;
